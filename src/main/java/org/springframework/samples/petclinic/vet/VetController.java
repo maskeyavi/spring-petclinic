@@ -15,13 +15,9 @@
  */
 package org.springframework.samples.petclinic.vet;
 
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -42,31 +38,24 @@ class VetController {
 	}
 
 	@GetMapping("/vets.html")
-	public String showVetList(@RequestParam(defaultValue = "1") int page, Model model) {
-		// Here we are returning an object of type 'Vets' rather than a collection of Vet
-		// objects so it is simpler for Object-Xml mapping
+	public String showVetList(@RequestParam(name = "specialty", required = false) String specialty, Model model) {
 		Vets vets = new Vets();
-		Page<Vet> paginated = findPaginated(page);
-		vets.getVetList().addAll(paginated.toList());
-		return addPaginationModel(page, paginated, model);
-	}
 
-	private String addPaginationModel(int page, Page<Vet> paginated, Model model) {
-		List<Vet> listVets = paginated.getContent();
-		model.addAttribute("currentPage", page);
-		model.addAttribute("totalPages", paginated.getTotalPages());
-		model.addAttribute("totalItems", paginated.getTotalElements());
-		model.addAttribute("listVets", listVets);
+		if (StringUtils.hasText(specialty)) {
+			// This is where the N+1 query bug is introduced.
+			// The specialties for each vet will be fetched in separate queries.
+			vets.getVetList().addAll(this.vetRepository.findBySpecialties_NameIgnoreCase(specialty));
+		}
+		else {
+			vets.getVetList().addAll(this.vetRepository.findAll());
+		}
+
+		model.addAttribute("vets", vets);
+		model.addAttribute("specialty", specialty); // Pass search term back to the view
 		return "vets/vetList";
 	}
 
-	private Page<Vet> findPaginated(int page) {
-		int pageSize = 5;
-		Pageable pageable = PageRequest.of(page - 1, pageSize);
-		return vetRepository.findAll(pageable);
-	}
-
-	@GetMapping({ "/vets" })
+	@GetMapping({ "/vets.xml", "/vets.json" })
 	public @ResponseBody Vets showResourcesVetList() {
 		// Here we are returning an object of type 'Vets' rather than a collection of Vet
 		// objects so it is simpler for JSon/Object mapping
