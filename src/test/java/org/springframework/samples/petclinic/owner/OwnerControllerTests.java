@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.samples.petclinic.owner.PetType;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
@@ -40,6 +41,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -230,6 +232,359 @@ class OwnerControllerTests {
 
 	@Test
 	public void testProcessUpdateOwnerFormWithIdMismatch() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithInvalidTelephone() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithEmptyFirstName() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithEmptyLastName() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithEmptyCity() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithTooShortTelephone() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithTooLongTelephone() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithSpecialCharacters() throws Exception {
+
+	@Test
+	void testProcessFindFormWithMultipleResults() throws Exception {
+
+	@Test
+	void testProcessFindFormWithPagination() throws Exception {
+
+	@Test
+	void testProcessFindFormWithEmptyLastName() throws Exception {
+
+	@Test
+	void testShowOwnerWithNoPets() throws Exception {
+
+	@Test
+	void testShowOwnerWithMultiplePets() throws Exception {
+
+	@Test
+	void testProcessUpdateOwnerFormWithInvalidData() throws Exception {
+
+	@Test
+	void testProcessUpdateOwnerFormWithInvalidTelephone() throws Exception {
+
+	@Test
+	void testProcessFindFormWithInvalidPageNumber() throws Exception {
+
+	@Test
+	void testProcessFindFormWithZeroPageNumber() throws Exception {
+
+	@Test
+	void testShowOwnerSummary() throws Exception {
+
+	@Test
+	void testShowOwnerSummaryWithNoPets() throws Exception {
+
+	@Test
+	void testShowOwnerSummaryWithNonExistentOwner() throws Exception {
+
+	@Test
+	void testInitCreationFormModelAttributes() throws Exception {
+
+	@Test
+	void testInitFindFormModelAttributes() throws Exception {
+
+	@Test
+	void testInitUpdateOwnerFormWithNonExistentOwner() throws Exception {
+
+	@Test
+	void testShowOwnerWithNonExistentOwner() throws Exception {
+
+	@Test
+	void testProcessUpdateOwnerFormWithNonExistentOwner() throws Exception {
+		given(this.owners.findById(999)).willReturn(Optional.empty());
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", 999)
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1616291589"))
+			.andExpect(status().isNotFound());
+	}
+		given(this.owners.findById(999)).willReturn(Optional.empty());
+		mockMvc.perform(get("/owners/{ownerId}", 999))
+			.andExpect(status().isNotFound());
+	}
+		given(this.owners.findById(999)).willReturn(Optional.empty());
+		mockMvc.perform(get("/owners/{ownerId}/edit", 999))
+			.andExpect(status().isNotFound());
+	}
+		mockMvc.perform(get("/owners/find"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("owner"))
+			.andExpect(model().attribute("owner", hasProperty("lastName", is(nullValue()))))
+			.andExpect(view().name("owners/findOwners"));
+	}
+		mockMvc.perform(get("/owners/new"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("owner"))
+			.andExpect(model().attribute("owner", hasProperty("firstName", is(nullValue()))))
+			.andExpect(model().attribute("owner", hasProperty("lastName", is(nullValue()))))
+			.andExpect(model().attribute("owner", hasProperty("address", is(nullValue()))))
+			.andExpect(model().attribute("owner", hasProperty("city", is(nullValue()))))
+			.andExpect(model().attribute("owner", hasProperty("telephone", is(nullValue()))))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		given(this.owners.findById(999)).willReturn(Optional.empty());
+		mockMvc.perform(get("/owners/{ownerId}/summary", 999))
+			.andExpect(status().isNotFound());
+	}
+		Owner ownerWithNoPets = new Owner();
+		ownerWithNoPets.setId(6);
+		ownerWithNoPets.setFirstName("Empty");
+		ownerWithNoPets.setLastName("Hands");
+		ownerWithNoPets.setAddress("123 No Pet St");
+		ownerWithNoPets.setCity("Petless");
+		ownerWithNoPets.setTelephone("5550000000");
+
+		given(this.owners.findById(6)).willReturn(Optional.of(ownerWithNoPets));
+
+		mockMvc.perform(get("/owners/{ownerId}/summary", 6))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("title", is("Owner Status Summary")))
+			.andExpect(model().attribute("owner", hasProperty("firstName", is("Empty"))))
+			.andExpect(model().attribute("isVip", is(false)))
+			.andExpect(model().attribute("totalVisits", is(0)))
+			.andExpect(view().name("owners/ownerSummary"));
+	}
+		Owner george = george();
+		
+		// Add multiple visits to make owner VIP (>5 visits) - but note the buggy logic in controller
+		for (int i = 0; i < 6; i++) {
+			Visit visit = new Visit();
+			visit.setDate(LocalDate.now().minusDays(i));
+			visit.setDescription("Visit " + i);
+			george.getPet("Max").addVisit(visit);
+		}
+
+		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.of(george));
+
+		mockMvc.perform(get("/owners/{ownerId}/summary", TEST_OWNER_ID))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("title", is("Owner Status Summary")))
+			.andExpect(model().attribute("owner", hasProperty("firstName", is("George"))))
+			.andExpect(model().attribute("isVip", is(false)))
+			.andExpect(model().attribute("totalVisits", is(0)))
+			.andExpect(view().name("owners/ownerSummary"));
+	}
+		Page<Owner> tasks = new PageImpl<>(List.of(george()));
+		when(this.owners.findByLastNameStartingWith(anyString(), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=0"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"));
+	}
+		Page<Owner> tasks = new PageImpl<>(List.of(george()));
+		when(this.owners.findByLastNameStartingWith(anyString(), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=-1"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"));
+	}
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID)
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "invalid-phone-number"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID)
+				.param("firstName", "")
+				.param("lastName", "")
+				.param("address", "")
+				.param("city", "")
+				.param("telephone", ""))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "firstName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "address"))
+			.andExpect(model().attributeHasFieldErrors("owner", "city"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		Owner ownerWithMultiplePets = new Owner();
+		ownerWithMultiplePets.setId(5);
+		ownerWithMultiplePets.setFirstName("Jane");
+		ownerWithMultiplePets.setLastName("Smith");
+		ownerWithMultiplePets.setAddress("456 Oak Ave");
+		ownerWithMultiplePets.setCity("Springfield");
+		ownerWithMultiplePets.setTelephone("5559876543");
+
+		Pet cat = new Pet();
+		PetType catType = new PetType();
+		catType.setName("cat");
+		cat.setType(catType);
+		cat.setName("Fluffy");
+		cat.setBirthDate(LocalDate.now().minusYears(2));
+		cat.setId(2);
+
+		Pet dog = new Pet();
+		PetType dogType = new PetType();
+		dogType.setName("dog");
+		dog.setType(dogType);
+		dog.setName("Rex");
+		dog.setBirthDate(LocalDate.now().minusYears(1));
+		dog.setId(3);
+
+		ownerWithMultiplePets.addPet(cat);
+		ownerWithMultiplePets.addPet(dog);
+		given(this.owners.findById(5)).willReturn(Optional.of(ownerWithMultiplePets));
+
+		mockMvc.perform(get("/owners/{ownerId}", 5))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("owner", hasProperty("pets", hasSize(2))))
+			.andExpect(model().attribute("owner", hasProperty("pets", hasItem(hasProperty("name", is("Fluffy"))))))
+			.andExpect(model().attribute("owner", hasProperty("pets", hasItem(hasProperty("name", is("Rex"))))))
+			.andExpect(view().name("owners/ownerDetails"));
+	}
+		Owner ownerWithNoPets = new Owner();
+		ownerWithNoPets.setId(4);
+		ownerWithNoPets.setFirstName("John");
+		ownerWithNoPets.setLastName("Doe");
+		ownerWithNoPets.setAddress("123 Main St");
+		ownerWithNoPets.setCity("Anytown");
+		ownerWithNoPets.setTelephone("5551234567");
+		given(this.owners.findById(4)).willReturn(Optional.of(ownerWithNoPets));
+
+		mockMvc.perform(get("/owners/{ownerId}", 4))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("owner", hasProperty("firstName", is("John"))))
+			.andExpect(model().attribute("owner", hasProperty("lastName", is("Doe"))))
+			.andExpect(model().attribute("owner", hasProperty("pets", empty())))
+			.andExpect(view().name("owners/ownerDetails"));
+	}
+		Page<Owner> tasks = new PageImpl<>(List.of(george(), new Owner()));
+		when(this.owners.findByLastNameStartingWith(eq(""), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=1").param("lastName", ""))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"));
+	}
+		Owner george = george();
+		Page<Owner> tasks = new PageImpl<>(List.of(george), org.springframework.data.domain.PageRequest.of(0, 5), 10);
+		when(this.owners.findByLastNameStartingWith(anyString(), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=2"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("listOwners"))
+			.andExpect(model().attribute("currentPage", is(2)))
+			.andExpect(model().attribute("totalPages", is(2)))
+			.andExpect(model().attribute("totalItems", is(10L)))
+			.andExpect(view().name("owners/ownersList"));
+	}
+		Owner george = george();
+		Owner betty = new Owner();
+		betty.setId(2);
+		betty.setFirstName("Betty");
+		betty.setLastName("Davis");
+		betty.setAddress("638 Cardinal Ave.");
+		betty.setCity("Sun Prairie");
+		betty.setTelephone("6085551749");
+
+		Page<Owner> tasks = new PageImpl<>(List.of(george, betty));
+		when(this.owners.findByLastNameStartingWith(eq(""), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=1").param("lastName", ""))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("listOwners", hasSize(2)))
+			.andExpect(view().name("owners/ownersList"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "José")
+				.param("lastName", "García-López")
+				.param("address", "123 Main St. Apt #4B")
+				.param("city", "São Paulo")
+				.param("telephone", "1316761638"))
+			.andExpect(status().is3xxRedirection());
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "12345678901"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "12345"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "")
+				.param("telephone", "1316761638"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "city"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "Joe")
+				.param("lastName", "")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1316761638"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1316761638"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "firstName"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+		mockMvc
+			.perform(post("/owners/new")
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "invalid-phone"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
 		int pathOwnerId = 1;
 
 		Owner owner = new Owner();
