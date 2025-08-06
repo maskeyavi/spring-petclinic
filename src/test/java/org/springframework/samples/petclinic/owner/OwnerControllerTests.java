@@ -230,6 +230,258 @@ class OwnerControllerTests {
 
 	@Test
 	public void testProcessUpdateOwnerFormWithIdMismatch() throws Exception {
+
+	@Test
+	void testProcessCreationFormWithInvalidData() throws Exception {
+		mockMvc.perform(post("/owners/new")
+				.param("firstName", "")
+				.param("lastName", "")
+				.param("address", "123 Street")
+				.param("city", "City")
+				.param("telephone", "invalid-phone"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "firstName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+
+	@Test
+	void testProcessCreationFormWithLongNames() throws Exception {
+		String longName = "a".repeat(51); // Assuming max length is 50
+		mockMvc.perform(post("/owners/new")
+				.param("firstName", longName)
+				.param("lastName", longName)
+				.param("address", "123 Street")
+				.param("city", "City")
+				.param("telephone", "1234567890"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+
+	@Test
+	void testProcessCreationFormWithSpecialCharacters() throws Exception {
+		mockMvc.perform(post("/owners/new")
+				.param("firstName", "José")
+				.param("lastName", "García-López")
+				.param("address", "123 Main St. Apt #5")
+				.param("city", "San José")
+				.param("telephone", "+1-234-567-8900"))
+			.andExpect(status().is3xxRedirection());
+	}
+
+	@Test
+	void testShowOwnerNotFound() throws Exception {
+		int nonExistentOwnerId = 999;
+		given(this.owners.findById(nonExistentOwnerId)).willReturn(Optional.empty());
+		
+		mockMvc.perform(get("/owners/{ownerId}", nonExistentOwnerId))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void testInitUpdateOwnerFormNotFound() throws Exception {
+		int nonExistentOwnerId = 999;
+		given(this.owners.findById(nonExistentOwnerId)).willReturn(Optional.empty());
+		
+		mockMvc.perform(get("/owners/{ownerId}/edit", nonExistentOwnerId))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormNotFound() throws Exception {
+		int nonExistentOwnerId = 999;
+		given(this.owners.findById(nonExistentOwnerId)).willReturn(Optional.empty());
+		
+		mockMvc.perform(post("/owners/{ownerId}/edit", nonExistentOwnerId)
+				.param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Street")
+				.param("city", "City")
+				.param("telephone", "1234567890"))
+			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void testProcessFindFormWithEmptyLastName() throws Exception {
+		mockMvc.perform(get("/owners").param("lastName", ""))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"));
+	}
+
+	@Test
+	void testProcessFindFormWithWhitespaceLastName() throws Exception {
+		Page<Owner> emptyPage = new PageImpl<>(List.of());
+		when(this.owners.findByLastNameStartingWith(eq("   "), any(Pageable.class))).thenReturn(emptyPage);
+		
+		mockMvc.perform(get("/owners").param("lastName", "   "))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(view().name("owners/findOwners"));
+	}
+
+	@Test
+	void testProcessFindFormWithSpecialCharactersInLastName() throws Exception {
+		Page<Owner> tasks = new PageImpl<>(List.of(george()));
+		when(this.owners.findByLastNameStartingWith(eq("O'Connor"), any(Pageable.class))).thenReturn(tasks);
+		
+		mockMvc.perform(get("/owners").param("lastName", "O'Connor"))
+			.andExpect(status().is3xxRedirection());
+	}
+
+	@Test
+	void testProcessFindFormWithMultipleResults() throws Exception {
+		Owner george = george();
+		Owner anotherFranklin = new Owner();
+		anotherFranklin.setId(2);
+		anotherFranklin.setFirstName("Benjamin");
+		anotherFranklin.setLastName("Franklin");
+		anotherFranklin.setAddress("200 Liberty St.");
+		anotherFranklin.setCity("Boston");
+		anotherFranklin.setTelephone("6175551234");
+		
+		Page<Owner> multipleResults = new PageImpl<>(List.of(george, anotherFranklin));
+		when(this.owners.findByLastNameStartingWith(eq("Franklin"), any(Pageable.class))).thenReturn(multipleResults);
+		
+		mockMvc.perform(get("/owners").param("lastName", "Franklin"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"))
+			.andExpect(model().attributeExists("listOwners"));
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormWithValidationErrors() throws Exception {
+		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID)
+				.param("firstName", "")
+				.param("lastName", "")
+				.param("address", "")
+				.param("city", "")
+				.param("telephone", "invalid-phone"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasErrors("owner"))
+			.andExpect(model().attributeHasFieldErrors("owner", "firstName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(model().attributeHasFieldErrors("owner", "address"))
+			.andExpect(model().attributeHasFieldErrors("owner", "telephone"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormWithPartialData() throws Exception {
+		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID)
+				.param("firstName", "UpdatedGeorge")
+				.param("address", "110 W. Liberty St.")
+				.param("city", "Madison")
+				.param("telephone", "6085551023"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeHasFieldErrors("owner", "lastName"))
+			.andExpect(view().name("owners/createOrUpdateOwnerForm"));
+	}
+
+	@Test
+	void testShowOwnerWithNoPets() throws Exception {
+		Owner ownerWithNoPets = new Owner();
+		ownerWithNoPets.setId(2);
+		ownerWithNoPets.setFirstName("John");
+		ownerWithNoPets.setLastName("Doe");
+		ownerWithNoPets.setAddress("123 Main St.");
+		ownerWithNoPets.setCity("Springfield");
+		ownerWithNoPets.setTelephone("5551234567");
+		
+		given(this.owners.findById(2)).willReturn(Optional.of(ownerWithNoPets));
+		
+		mockMvc.perform(get("/owners/{ownerId}", 2))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("owner", hasProperty("pets", empty())))
+			.andExpect(view().name("owners/ownerDetails"));
+	}
+
+	@Test
+	void testShowOwnerWithMultiplePets() throws Exception {
+		Owner george = george();
+		Pet bella = new Pet();
+		PetType cat = new PetType();
+		cat.setName("cat");
+		bella.setType(cat);
+		bella.setName("Bella");
+		bella.setBirthDate(LocalDate.of(2020, 1, 15));
+		bella.setId(2);
+		george.addPet(bella);
+		
+		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.of(george));
+		
+		mockMvc.perform(get("/owners/{ownerId}", TEST_OWNER_ID))
+			.andExpect(status().isOk())
+			.andExpect(model().attribute("owner", hasProperty("pets", hasSize(2))))
+			.andExpect(view().name("owners/ownerDetails"));
+	}
+
+	@Test
+	void testProcessFindFormWithPagination() throws Exception {
+		Owner george = george();
+		Page<Owner> pagedResult = new PageImpl<>(List.of(george), Pageable.ofSize(10).withPage(0), 1);
+		when(this.owners.findByLastNameStartingWith(eq("Franklin"), any(Pageable.class))).thenReturn(pagedResult);
+		
+		mockMvc.perform(get("/owners").param("lastName", "Franklin").param("page", "0").param("size", "10"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(view().name("redirect:/owners/" + TEST_OWNER_ID));
+	}
+
+	@Test
+	void testProcessFindFormWithInvalidPageNumber() throws Exception {
+		mockMvc.perform(get("/owners").param("page", "-1"))
+			.andExpect(status().isOk())
+			.andExpect(view().name("owners/ownersList"));
+	}
+
+	@Test
+	void testProcessCreationFormWithMinimalValidData() throws Exception {
+		mockMvc.perform(post("/owners/new")
+				.param("firstName", "A")
+				.param("lastName", "B")
+				.param("address", "1")
+				.param("city", "C")
+				.param("telephone", "1"))
+			.andExpect(status().is3xxRedirection());
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormWithIdZero() throws Exception {
+		Owner ownerWithZeroId = new Owner();
+		ownerWithZeroId.setId(0);
+		ownerWithZeroId.setFirstName("Test");
+		ownerWithZeroId.setLastName("Owner");
+		ownerWithZeroId.setAddress("123 Test St");
+		ownerWithZeroId.setCity("Test City");
+		ownerWithZeroId.setTelephone("1234567890");
+		
+		when(owners.findById(TEST_OWNER_ID)).thenReturn(Optional.of(ownerWithZeroId));
+		
+		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).flashAttr("owner", ownerWithZeroId))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/owners/" + TEST_OWNER_ID + "/edit"))
+			.andExpect(flash().attributeExists("error"));
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormWithNegativeId() throws Exception {
+		Owner ownerWithNegativeId = new Owner();
+		ownerWithNegativeId.setId(-1);
+		ownerWithNegativeId.setFirstName("Test");
+		ownerWithNegativeId.setLastName("Owner");
+		ownerWithNegativeId.setAddress("123 Test St");
+		ownerWithNegativeId.setCity("Test City");
+		ownerWithNegativeId.setTelephone("1234567890");
+		
+		when(owners.findById(TEST_OWNER_ID)).thenReturn(Optional.of(ownerWithNegativeId));
+		
+		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).flashAttr("owner", ownerWithNegativeId))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/owners/" + TEST_OWNER_ID + "/edit"))
+			.andExpect(flash().attributeExists("error"));
+	}
 		int pathOwnerId = 1;
 
 		Owner owner = new Owner();
