@@ -232,3 +232,4 @@ LEFT JOIN visits v ON v.pet_id = p.id
 WHERE o.id = :ownerId
   AND (:windowStart IS NULL OR v.visit_date >= :windowStart)
 GROUP BY o.id;
+
