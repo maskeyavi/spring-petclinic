@@ -66,8 +66,11 @@
   <div class="container-fluid">
     <div class="container xd-container">
 
-      <div th:if="${param.name}" class="alert alert-primary" role="alert">
-        <h4 th:utext="'Welcome back, ' + ${param.name} + '!'"></h4>
+      <div th:if="${param.name != null
+          and #arrays.isNotEmpty(param.name)
+          and #strings.isNotEmpty(param.name[0])}"
+          class="alert alert-primary" role="alert">
+        <h4 th:text="'Welcome back, ' + ${param.name[0]} + '!'">Welcome back!</h4>
       </div>
 
       <th:block th:insert="${template}" />
