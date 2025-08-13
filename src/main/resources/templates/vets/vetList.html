@@ -6,6 +6,14 @@
 
   <h2 th:text="#{vets}">Veterinarians</h2>
 
+  <form th:action="@{/vets/findBySpecialty}" method="get" class="form-inline">
+    <div class="form-group">
+      <input type="text" name="specialtyName" class="form-control" placeholder="Search by specialty"/>
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+  <br/>
+
   <table id="vets" class="table table-striped">
     <thead>
       <tr>
@@ -14,7 +22,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr th:each="vet : ${listVets}">
+      <tr th:each="vet : ${listVets != null ? listVets : vets.vetList}">
         <td th:text="${vet.firstName + ' ' + vet.lastName}"></td>
         <td>
           <span th:each="specialty : ${vet.specialties}" th:text="${specialty.name + ' '}" /> <span
@@ -23,7 +31,7 @@
       </tr>
     </tbody>
   </table>
-  <div th:if="${totalPages > 1}">
+  <div th:if="${totalPages != null and totalPages > 1}">
     <span th:text="#{pages}">Pages:</span>
     <span>[</span>
     <span th:each="i: ${#numbers.sequence(1, totalPages)}">
