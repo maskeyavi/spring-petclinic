@@ -15,14 +15,12 @@
  */
 package org.springframework.samples.petclinic.vet;
 
-import java.util.Set;
-
-import org.springframework.samples.petclinic.model.NamedEntity;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import java.util.Set;
+import org.springframework.samples.petclinic.model.NamedEntity;
 
 /**
  * Models a {@link Vet Vet's} specialty (for example, dentistry).
@@ -33,15 +31,14 @@ import jakarta.persistence.Table;
 @Table(name = "specialties")
 public class Specialty extends NamedEntity {
 
-	@ManyToMany(mappedBy = "specialties", fetch = FetchType.LAZY)
-	private Set<Vet> vets;
+  @ManyToMany(mappedBy = "specialties", fetch = FetchType.LAZY)
+  private Set<Vet> vets;
 
-	public Set<Vet> getVets() {
-		return vets;
-	}
+  public Set<Vet> getVets() {
+    return vets;
+  }
 
-	public void setVets(Set<Vet> vets) {
-		this.vets = vets;
-	}
-
+  public void setVets(Set<Vet> vets) {
+    this.vets = vets;
+  }
 }
