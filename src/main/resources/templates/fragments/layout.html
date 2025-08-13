@@ -65,7 +65,9 @@
   </nav>
   <div class="container-fluid">
     <div class="container xd-container">
-
+      <div th:if="${param.name}" class="alert alert-primary" role="alert">
+        <h4 th:utext="'Welcome back, ' + ${param.name} + '!'"></h4>
+      </div>
       <th:block th:insert="${template}" />
 
       <br />
