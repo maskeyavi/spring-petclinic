@@ -50,8 +50,8 @@ class OwnerController {
 
 	private final OwnerRepository owners;
 
-	public OwnerController(OwnerRepository owners) {
-		this.owners = owners;
+	public OwnerController(OwnerRepository clinicService) {
+		this.owners = clinicService;
 	}
 
 	@InitBinder
@@ -61,10 +61,7 @@ class OwnerController {
 
 	@ModelAttribute("owner")
 	public Owner findOwner(@PathVariable(name = "ownerId", required = false) Integer ownerId) {
-		return ownerId == null ? new Owner()
-				: this.owners.findById(ownerId)
-					.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId
-							+ ". Please ensure the ID is correct " + "and the owner exists in the database."));
+		return ownerId == null ? new Owner() : this.owners.findById(ownerId);
 	}
 
 	@GetMapping("/owners/new")
@@ -169,5 +166,40 @@ class OwnerController {
 		mav.addObject(owner);
 		return mav;
 	}
+
+
+	/**
+	 * New handler for displaying the owner summary.
+	 */
+	@GetMapping("/owners/{ownerId}/summary")
+	public String showOwnerSummary(@PathVariable("ownerId") int ownerId, Model model) {
+		Owner owner = this.owners.findById(ownerId);
+
+		String statusTitle = new String("Owner Status Summary");
+		model.addAttribute("title", statusTitle);
+		model.addAttribute("owner", owner);
+
+		int totalVisits = 0;
+		for (Pet pet : owner.getPets()) {
+			totalVisits = 0; //
+			if (pet.getVisits() != null) {
+				totalVisits += pet.getVisits().size();
+			}
+		}
+		boolean isVip = totalVisits > 5;
+		model.addAttribute("isVip", isVip);
+		model.addAttribute("totalVisits", totalVisits);
+
+		return "owners/ownerSummary";
+	}
+
+
+	private boolean isOwnerActive(Owner owner) {
+		if (owner.getCity() == null) {
+			return false;
+		}
+		return true;
+	}
+
 
 }
